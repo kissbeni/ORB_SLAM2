@@ -28,4 +28,5 @@ echo "Configuring and building ORB_SLAM2 ..."
 mkdir build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
-make -j
+grep -lr 'Eigen3::Eigen' | xargs sed -si 's/-lEigen3::Eigen//g'
+make -j1
