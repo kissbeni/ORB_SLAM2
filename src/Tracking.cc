@@ -247,13 +247,34 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
             cvtColor(mImGray,mImGray,CV_BGRA2GRAY);
     }
 
+    /*std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
     if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
         mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
     else
         mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
+    std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
 
+    std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
     Track();
 
+    std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
+    printf("i_frame: %.08f, i_ttrack: %.08lf\n", std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count(), std::chrono::duration_cast<std::chrono::duration<double> >(t4 - t3).count());*/
+    //printf("Frame create time: %.04lf, SLAM internal track time: %.04lf\n", std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count(), std::chrono::duration_cast<std::chrono::duration<double> >(t4 - t3).count());
+
+    //return mCurrentFrame.mTcw.clone();
+
+    if (mPrevFrameFuture.valid()) {
+        if (mPrevTrackFuture.valid()) mPrevTrackFuture.get();
+        std::swap(mLastProcessedFrame, mCurrentFrame);
+        mCurrentFrame = std::move(mPrevFrameFuture.get());
+        mPrevTrackFuture = std::async(std::launch::async, [this]() { Track(); });
+    }
+
+    if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
+        mPrevFrameFuture = std::async(std::launch::async, [=]() { return Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth); });
+    else
+        mPrevFrameFuture = std::async(std::launch::async, [=]() { return Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth); });
+    
     return mCurrentFrame.mTcw.clone();
 }
 

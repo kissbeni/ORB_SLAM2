@@ -25,6 +25,7 @@
 #include<string>
 #include<thread>
 #include<opencv2/core/core.hpp>
+#include<future>
 
 #include "Tracking.h"
 #include "Map.h"
@@ -32,7 +33,6 @@
 #include "LoopClosing.h"
 #include "KeyFrameDatabase.h"
 #include "ORBVocabulary.h"
-#include "Viewer.h"
 
 namespace ORB_SLAM2
 {

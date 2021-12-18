@@ -24,6 +24,7 @@
 
 #include<opencv2/core/core.hpp>
 #include<opencv2/features2d/features2d.hpp>
+#include<future>
 
 #include"Map.h"
 #include"LocalMapping.h"
@@ -88,7 +89,7 @@ public:
     int mSensor;
 
     // Current Frame
-    Frame mCurrentFrame;
+    Frame mCurrentFrame, mLastProcessedFrame;
     cv::Mat mImGray;
 
     // Initialization Variables (Monocular)
@@ -107,6 +108,9 @@ public:
 
     // True if local mapping is deactivated and we are performing only localization
     bool mbOnlyTracking;
+
+    std::future<Frame> mPrevFrameFuture;
+    std::future<void> mPrevTrackFuture;
 
     void Reset();
 
