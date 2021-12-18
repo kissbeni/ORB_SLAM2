@@ -20,7 +20,9 @@ cd ../../../
 echo "Uncompress vocabulary ..."
 
 cd Vocabulary
-tar -xf ORBvoc.txt.tar.gz
+if [[ ! -f ORBvoc.txt ]]; then
+    tar -xf ORBvoc.txt.tar.gz
+fi
 cd ..
 
 echo "Configuring and building ORB_SLAM2 ..."
@@ -30,3 +32,4 @@ cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 grep -lr 'Eigen3::Eigen' | xargs sed -si 's/-lEigen3::Eigen//g'
 make -j1
+sudo cp ../lib/libORB_SLAM2.so /usr/lib/libORB_SLAM2.so
