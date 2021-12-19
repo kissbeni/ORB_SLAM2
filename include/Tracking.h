@@ -24,7 +24,7 @@
 
 #include<opencv2/core/core.hpp>
 #include<opencv2/features2d/features2d.hpp>
-#include<future>
+#include <condition_variable>
 
 #include"Map.h"
 #include"LocalMapping.h"
@@ -40,6 +40,27 @@
 
 namespace ORB_SLAM2
 {
+
+class Semaphore {
+    public:
+        Semaphore(int count = 0, int max = 1) : mCount{count}, mMax{max} {}
+
+        inline void notify() noexcept {
+            std::unique_lock<std::mutex> lock{mMutex};
+            mCount = std::min(mMax, mCount + 1);
+            mConditionVar.notify_one();
+        }
+
+        inline void wait() noexcept {
+            std::unique_lock<std::mutex> lock{mMutex};
+            while (!mCount) mConditionVar.wait(lock);
+            mCount--;
+        }
+    private:
+        std::mutex mMutex;
+        std::condition_variable mConditionVar;
+        int mCount, mMax;
+};
 
 class Map;
 class LocalMapping;
@@ -57,6 +78,8 @@ public:
     cv::Mat GrabImageStereo(const cv::Mat &imRectLeft,const cv::Mat &imRectRight, const double &timestamp);
     cv::Mat GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double &timestamp);
     cv::Mat GrabImageMonocular(const cv::Mat &im, const double &timestamp);
+
+    void PollCurrentFrame();
 
     void SetLocalMapper(LocalMapping* pLocalMapper);
     void SetLoopClosing(LoopClosing* pLoopClosing);
@@ -89,7 +112,7 @@ public:
     int mSensor;
 
     // Current Frame
-    Frame mCurrentFrame, mLastProcessedFrame;
+    Frame mCurrentFrame, mNextFrame, mLastProcessedFrame;
     cv::Mat mImGray;
 
     // Initialization Variables (Monocular)
@@ -109,8 +132,7 @@ public:
     // True if local mapping is deactivated and we are performing only localization
     bool mbOnlyTracking;
 
-    std::future<Frame> mPrevFrameFuture;
-    std::future<void> mPrevTrackFuture;
+    Semaphore mHasNextFrame;
 
     void Reset();
 
